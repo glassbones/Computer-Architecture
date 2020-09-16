@@ -1,34 +1,51 @@
-"""CPU functionality."""
-
 import sys
+
 
 class CPU:
     """Main CPU class."""
-
     def __init__(self):
-        """Construct a new CPU."""
-        pass
+        self.reg = [None] * 8 # R0-R7
+        self.ram = [idx + 1 for idx, val in enumerate([None] * 255)]
+
+    def ram_read(self, MAR): # Memory Address Register
+        # get the value at ram location
+        return self.ram[MAR]
+
+    def reg_write(self, MAR, MDR): # Memory Data Register
+        # write over a specified location in ram
+        reg_ptr = self.reg[self.ram[MAR]]
+        reg_ptr = self.ram[MDR]
+        print(f"LS8 WRITE: ram[{self.ram[MAR]}] = {self.ram[MAR]}")
+
+    def reg_read(self, MAR): # Memory Address Register
+        # get the value at ram location
+        print(MAR)
+        return self.reg[self.ram[MAR]]
+
+    def reg_write(self, MAR, MDR): # Memory Data Register
+        # write over a specified location in ram
+        self.reg[self.ram[MAR]] = self.ram[MDR]
+        print(f"LS8 WRITE: reg[{self.ram[MAR]}] = {self.reg[self.ram[MAR]]}")
 
     def load(self):
         """Load a program into memory."""
-
-        address = 0
 
         # For now, we've just hardcoded a program:
 
         program = [
             # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
+            0b10000010, #130 # LDI R0,8
+            0b00000000, #0
+            0b00001000, #8
+            0b01000111, #71 # PRN R0
+            0b00000000, #0
+            0b00000001, #1 # HLT
         ]
 
+        idx = 0
         for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+            self.ram[idx] = instruction
+            idx += 1
 
 
     def alu(self, op, reg_a, reg_b):
@@ -62,4 +79,22 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        pc = 0  # Program Counter, address of the currently-executing instuction
+        running = True
+        while running:
+            ir = self.ram[pc]  # Instruction Register, copy of the currently-executing instruction
+
+            # LDI
+            if ir == 130:
+                self.reg_write(pc+1, pc+2)
+                pc += 3
+            # PRN
+            elif ir == 71:
+                print(f"LS8 PRN: {self.reg_read(pc + 1)}")
+                pc += 2
+            # HLT
+            elif ir == 1: running = False
+            # ???
+            else: 
+                print(f"Unknown instruction: \"{ir}\"")
+                running = False

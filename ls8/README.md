@@ -40,10 +40,8 @@ or
 
 This code above requires the implementation of three instructions:
 
-* `LDI`: load "immediate", store a value in a register, or "set this register to
-  this value".
-* `PRN`: a pseudo-instruction that prints the numeric value stored in a
-  register.
+* `LDI`: load "immediate", store a value in a register, or "set this register to this value".
+* `PRN`: a pseudo-instruction that prints the numeric value stored in a register.
 * `HLT`: halt the CPU and exit the emulator.
 
 See [the LS-8 spec](../LS8-spec.md) for more details.
