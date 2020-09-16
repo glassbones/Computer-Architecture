@@ -19,7 +19,6 @@ class CPU:
 
     def reg_read(self, MAR): # Memory Address Register
         # get the value at ram location
-        print(MAR)
         return self.reg[self.ram[MAR]]
 
     def reg_write(self, MAR, MDR): # Memory Data Register
@@ -27,26 +26,9 @@ class CPU:
         self.reg[self.ram[MAR]] = self.ram[MDR]
         print(f"LS8 WRITE: reg[{self.ram[MAR]}] = {self.reg[self.ram[MAR]]}")
 
-    def load(self):
+    def load(self, program):
         """Load a program into memory."""
-
-        # For now, we've just hardcoded a program:
-
-        program = [
-            # From print8.ls8
-            0b10000010, #130 # LDI R0,8
-            0b00000000, #0
-            0b00001000, #8
-            0b01000111, #71 # PRN R0
-            0b00000000, #0
-            0b00000001, #1 # HLT
-        ]
-
-        idx = 0
-        for instruction in program:
-            self.ram[idx] = instruction
-            idx += 1
-
+        for idx, value in enumerate(program): self.ram[idx] = value
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
