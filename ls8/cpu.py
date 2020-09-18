@@ -8,7 +8,10 @@ class CPU:
         self.reg = [0, 0, 0, 0, 0, 0, 0, 244] # R0-R7
         self.sp = self.reg[7]
         self.ram = [idx + 1 for idx, val in enumerate([None] * 255)]
-        self.running = True 
+        self.running = True
+        self.E_flag = 0
+        self.L_flag = 0
+        self.G_flag = 0 
         self.branchtable = {
             0b10100000: self.ADD,       # 160
             0b10101000: self.AND,       # 168
@@ -66,11 +69,10 @@ class CPU:
     def load(self, program):
         for idx, value in enumerate(program): self.ram[idx] = value
 
-    def alu(self, op, reg_a, reg_b):
+    def alu(self, op, arg0, arg1):
         """ALU operations."""
-
         if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
+            self.reg[arg0] += self.reg[arg1]
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -95,20 +97,54 @@ class CPU:
 
         print()
 
+    def push_value(self, value):
+        self.sp -= 1
+        top_of_stack_ptr = self.sp
+        self.ram[top_of_stack_ptr] = value
+
+    def pop_value(self):
+        top_of_stack_ptr = self.sp
+        self.sp += 1
+        return self.ram[top_of_stack_ptr]
+
     def get_arg(self, ir):
         if ir >> 6 == 2: return [self.pc + 1, self.pc + 2]
         elif ir >> 6 == 1: return self.pc + 1
         else: return 0
 
+    def ADD(self, arg):
+        self.alu("ADD", self.ram[arg[0]], self.ram[arg[1]])
+        self.pc += 0
 
-    def ADD(self):
-        pass
     def AND(self):
         pass
-    def CALL_REG(self):
-        pass
-    def CMP(self):
-        pass
+    
+    def CALL_REG(self, arg):
+        # store return address
+        return_address = self.pc + 2
+        # push return address to stack
+        self.push_value(return_address)
+        # grab sub-routine pointer from argument
+        reg_idx = self.ram[arg]
+        # Set PC to sub-routine address
+        self.pc = self.reg[reg_idx]
+
+    def CMP(self, arg):
+        val_a = self.reg[self.ram[arg[0]]]
+        val_b = self.reg[self.ram[arg[1]]]
+        if val_a == val_b:
+            self.L_flag = 0
+            self.G_flag = 0
+            self.E_flag = 1
+        if val_a < val_b:
+            self.L_flag = 1
+            self.G_flag = 0
+            self.E_flag = 0
+        if val_a > val_b:
+            self.L_flag = 0
+            self.G_flag = 1
+            self.E_flag = 0
+
     def DEC(self):
         pass
     def DIV(self):
@@ -122,20 +158,33 @@ class CPU:
         pass
     def IRET(self):
         pass
-    def JEQ(self):
-        pass
-    def JGE(self):
-        pass
-    def JGT(self):
-        pass
-    def JLE(self):
-        pass
-    def JLT(self):
-        pass
-    def JMP(self):
-        pass
-    def JNE(self):
-        pass
+
+    def JEQ(self, arg): 
+        if self.E_flag: self.JMP(arg)
+        else: self.pc += 2
+
+    def JGE(self, arg):
+        if self.E_flag or self.G_flag: self.JMP(arg)
+        else: self.pc += 2
+
+    def JGT(self, arg):
+        if self.G_flag: self.JMP(arg)
+        else: self.pc += 2
+
+    def JLE(self, arg):
+        if self.E_flag or self.L_flag: self.JMP(arg)
+        else: self.pc += 2
+
+    def JLT(self, arg):
+        if self.L_flag: self.JMP(arg)
+        else: self.pc += 2
+
+    def JMP(self, arg):
+        self.pc = self.reg[self.ram[arg]]
+
+    def JNE(self, arg):
+        if not self.E_flag: self.JMP(arg)
+        else: self.pc += 2
 
     # Set a reg value
     def LDI(self, arg):
@@ -156,27 +205,30 @@ class CPU:
     def OR(self):
         pass
     def POP(self, arg):
-        # sp is the value you want to put into the register
-        value = self.ram[self.sp]
-        # opA is the register you want to store into
+        value = self.pop_value()
+        # arg is the register you want to store into
         self.reg[arg] = value
-        self.sp += 1
+        # increment pc
         self.pc += 1
+        
+        
     def PRA(self):
         pass
 
     def PRN(self, arg): print(f"[PRN] Address: reg[{self.ram[arg]}] Value: {self.reg_read(arg)}")
 
     def PUSH(self, arg):
-        # decrement stack pointer
-        self.sp -= 1
         # copy the value to the SP address
-        self.ram[self.sp] = self.reg[arg]
-        # increment program counter
+        self.push_value(self.reg[arg])
+        # increment pc
         self.pc += 1
+
         
-    def RET(self):
-        pass
+    def RET(self, arg):
+        # pop value from stack into pc
+        self.pc = self.ram[self.sp]
+        self.sp += 1
+
     def SHL(self):
         pass
     def SHR(self):
@@ -205,7 +257,7 @@ class CPU:
                 print(f"Unknown instruction: \"{ir}\"")
                 running = False
 
-            # skip arguments and go to next instruction
-            self.pc += ( ir >> 6 ) + 1
+            # go to next instruction if 4th MSB is not 1
+            if not ((ir >> 4) & 1): self.pc += ( ir >> 6 ) + 1
     
     
