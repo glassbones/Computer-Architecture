@@ -114,10 +114,11 @@ class CPU:
 
     def ADD(self, arg):
         self.alu("ADD", self.ram[arg[0]], self.ram[arg[1]])
-        self.pc += 0
 
-    def AND(self):
-        pass
+    def AND(self, arg):
+        reg_a = self.reg[self.ram[arg[0]]]
+        reg_b = self.reg[self.ram[arg[1]]]
+        reg_a = reg_a & reg_b
     
     def CALL_REG(self, arg):
         # store return address
@@ -200,10 +201,14 @@ class CPU:
         pass
     def NOP(self):
         pass
-    def NOT(self):
-        pass
-    def OR(self):
-        pass
+    def NOT(self, arg):
+        self.reg[self.ram[arg]] = ~ self.reg[self.ram[arg]]
+
+    def OR(self, arg):
+        reg_a = self.reg[self.ram[arg[0]]]
+        reg_b = self.reg[self.ram[arg[1]]]
+        reg_a = reg_a | reg_b
+
     def POP(self, arg):
         value = self.pop_value()
         # arg is the register you want to store into
@@ -237,8 +242,10 @@ class CPU:
         pass
     def SUB(self):
         pass
-    def XOR(self):
-        pass
+    def XOR(self, arg):
+        reg_a = self.reg[self.ram[arg[0]]]
+        reg_b = self.reg[self.ram[arg[1]]]
+        reg_a = reg_a ^ reg_b
 
     
 
